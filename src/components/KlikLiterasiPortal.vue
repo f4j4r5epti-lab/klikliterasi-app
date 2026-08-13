@@ -322,21 +322,23 @@ import { ref, computed, watch, onMounted } from 'vue'
 // --- STATE TOGGLE MENU HP ---
 const isMenuOpen = ref(false)
 
-// --- KONFIGURASI GOOGLE APPS SCRIPT ---
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZLGJw3Z792zTW5q2Q9bHrMJd1dSBzj9PHvG3YXKGUqVRtVJYF-BkdyFyFkaaGobRmEQ/exec'
+// --- KONFIGURASI REST API CPANEL ---
+const API_URL = 'https://api-literasi.sdnpucung.my.id';
 
-// State untuk status pengiriman
+// State untuk status pengiriman & loading
 const isSubmitting = ref(false)
+const isLoadingPosts = ref(false)
 
 // --- STATE PENJADWALAN & PILIHAN KELAS (DENGAN LOCALSTORAGE) ---
 const selectedClass = ref(1) // Default awal jika belum pernah memilih
 
-// Mengambil data kelas yang pernah disimpan saat komponen dimuat
+// Mengambil data kelas & data rangkuman dari MySQL saat komponen dimuat
 onMounted(() => {
   const savedClass = localStorage.getItem('user_selected_class')
   if (savedClass) {
     selectedClass.value = Number(savedClass)
   }
+  fetchJournalPosts()
 })
 
 // Menyimpan otomatis ke localStorage setiap kali siswa mengganti kelas
@@ -368,7 +370,6 @@ const isBolehInteraksi = computed(() => {
   if (currentDayName === 'Minggu') return true // Bebas akses di hari Minggu
   return scheduleMatrix[currentDayName] === Number(selectedClass.value)
 })
-
 
 // --- KATALOG BUKU ---
 const selectedCategory = ref('Semua')
@@ -409,7 +410,6 @@ const filteredBooks = computed(() => {
   return books.value.filter(b => b.category === selectedCategory.value || b.targetClass === selectedCategory.value)
 })
 
-
 // --- JURNAL MEMBACA / LEMBAR KERJA ---
 const newEntry = ref({
   studentName: '',
@@ -417,25 +417,36 @@ const newEntry = ref({
   summary: ''
 })
 
-const journalPosts = ref([
-  {
-    id: 1,
-    studentName: 'Budi Santoso',
-    studentClass: 2,
-    timeAgo: '10 menit lalu',
-    bookTitle: 'Kancil & Buaya Cerdik',
-    summary: 'Pesan moral cerita ini kita harus menggunakan akal cerdik kita untuk kebaikan dan membantu teman, bukan untuk menipu.',
-    likes: 5,
-    isLiked: false,
-    newCommentText: '',
-    comments: [
-      { author: 'Ibu Guru Ani', text: 'Bagus sekali rangkumannya Budi! Pertahankan ya.', isTeacher: true },
-      { author: 'Siti', text: 'Keren budi!', isTeacher: false }
-    ]
-  }
-])
+const journalPosts = ref([])
 
-// SUBMIT LEMBAR KERJA DENGAN INTEGRASI GOOGLE SHEETS VIA FETCH
+// AMBIL DATA RANGKUMAN DARI BACKEND CPANEL (MYSQL)
+const fetchJournalPosts = async () => {
+  isLoadingPosts.value = true
+  try {
+    const response = await fetch(`${API_URL}/get_journals.php`)
+    if (response.ok) {
+      const data = await response.json()
+      journalPosts.value = data.map(item => ({
+        id: item.id,
+        studentName: item.student_name,
+        studentClass: item.student_class,
+        timeAgo: item.created_at || 'Baru saja',
+        bookTitle: item.book_title,
+        summary: item.summary,
+        likes: item.likes || 0,
+        isLiked: false,
+        newCommentText: '',
+        comments: item.comments || []
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal mengambil data dari MySQL:', error)
+  } finally {
+    isLoadingPosts.value = false
+  }
+}
+
+// SUBMIT LEMBAR KERJA KE BACKEND CPANEL (MYSQL)
 const submitWorksheet = async () => {
   if (!isBolehInteraksi.value) return
   if (!newEntry.value.studentName || !newEntry.value.summary) return
@@ -444,39 +455,33 @@ const submitWorksheet = async () => {
 
   const payload = {
     studentName: newEntry.value.studentName,
-    studentClass: `Kelas ${selectedClass.value}`,
+    studentClass: selectedClass.value,
     bookTitle: newEntry.value.bookTitle || 'Buku Cerita',
     summary: newEntry.value.summary
   }
 
   try {
-    await fetch(GOOGLE_SCRIPT_URL, {
+    const response = await fetch(`${API_URL}/save_journal.php`, {
       method: 'POST',
-      mode: 'no-cors',
       headers: {
-        'Content-Type': 'text/plain;charset=utf-8'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
     })
 
-    // Update Feed Jurnal Lokal
-    journalPosts.value.unshift({
-      id: Date.now(),
-      studentName: payload.studentName,
-      studentClass: selectedClass.value,
-      timeAgo: 'Baru saja',
-      bookTitle: payload.bookTitle,
-      summary: payload.summary,
-      likes: 0,
-      isLiked: false,
-      newCommentText: '',
-      comments: []
-    })
+    const result = await response.json()
 
-    alert('✨ Rangkumanmu berhasil terkirim dan tersimpan aman!')
-    newEntry.value.studentName = ''
-    newEntry.value.bookTitle = ''
-    newEntry.value.summary = ''
+    if (response.ok && result.success) {
+      // Refresh feed agar data paling baru dari MySQL tampil
+      await fetchJournalPosts()
+
+      alert('✨ Rangkumanmu berhasil terkirim dan tersimpan aman di server!')
+      newEntry.value.studentName = ''
+      newEntry.value.bookTitle = ''
+      newEntry.value.summary = ''
+    } else {
+      throw new Error(result.message || 'Gagal menyimpan ke database')
+    }
 
   } catch (error) {
     console.error('Error:', error)
@@ -505,6 +510,7 @@ const addComment = (post) => {
 }
 
 const getInitials = (name) => {
+  if (!name) return 'SD'
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
 </script>
