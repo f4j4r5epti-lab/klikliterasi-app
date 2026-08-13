@@ -313,7 +313,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 const isMenuOpen = ref(false)
 
 // Ganti URL API lama menjadi domain API yang baru:
-const API_URL = 'https://api.klikliterasi.sdnpucung.my.id';
+const API_URL = 'https://api-literasi.sdnpucung.my.id';
 
 const isSubmitting = ref(false)
 const isLoadingPosts = ref(false)
