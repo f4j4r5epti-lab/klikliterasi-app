@@ -331,7 +331,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 const isMenuOpen = ref(false)
 
 // --- KONFIGURASI REST API CPANEL ---
-const API_URL = 'https://api.klikliterasi.sdnpucung.my.id/api.php';
+const API_URL = 'https://api-literasi.sdnpucung.my.id/api.php';
 
 // State untuk status pengiriman & loading
 const isSubmitting = ref(false)
