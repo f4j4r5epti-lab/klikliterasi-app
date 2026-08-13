@@ -312,12 +312,11 @@ import { ref, computed, watch, onMounted } from 'vue'
 
 const isMenuOpen = ref(false)
 
-// ✅ SUDAH DIPERBAIKI (Ditambahkan /api.php)
+// ✅ API Endpoint Sudah Terhubung ke File PHP cPanel
 const API_URL = 'https://api-literasi.sdnpucung.my.id/api.php';
 
 const isSubmitting = ref(false)
 const isLoadingPosts = ref(false)
-
 const selectedClass = ref(1)
 
 onMounted(() => {
@@ -325,7 +324,6 @@ onMounted(() => {
   if (savedClass) {
     selectedClass.value = Number(savedClass)
   }
-  // Ambil data dari API MySQL saat aplikasi pertama dibuka
   fetchJournalPosts()
 })
 
@@ -333,7 +331,10 @@ watch(selectedClass, (newClass) => {
   localStorage.setItem('user_selected_class', newClass)
 })
 
-const currentDayName = new Date().toLocaleDateString('id-ID', { weekday: 'long' })
+// ✅ Perbaikan Deteksi Hari & Jadwal (Anti Bug Localize)
+const todayIndex = new Date().getDay()
+const daysNameList = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+const currentDayName = daysNameList[todayIndex]
 
 const scheduleMatrix = {
   'Senin': 1,
@@ -378,7 +379,6 @@ const fetchJournalPosts = async () => {
     const response = await fetch(API_URL)
     const result = await response.json()
     if (result.status === 'success') {
-      // Pastikan setiap post memiliki properti comments berupa Array
       journalPosts.value = result.data.map(post => ({
         ...post,
         comments: post.comments || [],
@@ -434,13 +434,14 @@ const submitWorksheet = async () => {
   }
 }
 
-// 3. TOGGLE LIKE
+// 3. TOGGLE LIKE (AMAN)
 const toggleLike = async (post) => {
   if (!isBolehInteraksi.value) return
   
-  // Optimistic UI Update
+  const currentLikes = Number(post.likes) || 0
+
   post.isLiked = !post.isLiked
-  post.likes = post.isLiked ? Number(post.likes) + 1 : Number(post.likes) - 1
+  post.likes = post.isLiked ? currentLikes + 1 : Math.max(0, currentLikes - 1)
 
   const payload = {
     action: 'toggle_like',
@@ -469,7 +470,6 @@ const addComment = async (post) => {
 
   if (!post.comments) post.comments = []
 
-  // Optimistic UI Update
   post.comments.push({
     author: authorName,
     text: commentText,
