@@ -365,10 +365,11 @@ const scheduleMatrix = {
 
 const activeScheduleText = computed(() => {
   const allowedClass = scheduleMatrix[currentDayName]
-  return allowedClass ? `Siswa Kelas ${allowedClass}` : 'Semua Kelas (Libur Hari Minggu)'
+  return allowedClass ? `Siswa Kelas ${allowedClass}` : 'Semua Kelas (Bebas Interaksi Hari Minggu)'
 })
 
 const isBolehInteraksi = computed(() => {
+  // Hari Minggu semua kelas bebas berinteraksi
   if (currentDayName === 'Minggu') return true
   return scheduleMatrix[currentDayName] === Number(selectedClass.value)
 })
@@ -431,6 +432,7 @@ const fetchJournalPosts = async () => {
       if (resData.status === 'success') {
         journalPosts.value = resData.data.map(item => ({
           ...item,
+          comments: item.comments || [], // Aman jika komentar kosong
           newCommentText: ''
         }))
       }
@@ -514,6 +516,8 @@ const addComment = async (post) => {
 
   const commentText = post.newCommentText.trim()
   const authorName = `Siswa Kelas ${selectedClass.value}`
+
+  if (!post.comments) post.comments = []
 
   post.comments.push({
     author: authorName,
