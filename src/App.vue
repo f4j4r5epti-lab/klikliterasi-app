@@ -359,9 +359,8 @@ const selectedCategory = ref('Semua')
 const categories = ['Semua', 'Kemdikdasmen', 'Dongeng Nusantara', 'Kelas 1-3', 'Kelas 4-6']
 
 const books = ref([
-  { id: 1, title: 'Kancil & Buaya Cerdik', category: 'Kemdikdasmen', targetClass: 'Kelas 1-3', synopsis: 'Kisah kancil yang cerdik menyeberangi sungai dengan menghitung buaya.', coverIcon: '🦊', url: 'https://buku.kemdikbud.go.id' },
-  { id: 2, title: 'Misteri Rumah Pohon', category: 'Kelas 4-6', targetClass: 'Kelas 4-6', synopsis: 'Petualangan 3 sahabat menemukan rahasia di dalam hutan desa.', coverIcon: '🌳', url: 'https://buku.kemdikbud.go.id' },
-  { id: 3, title: 'Legenda Malin Kundang', category: 'Dongeng Nusantara', targetClass: 'Kelas 4-6', synopsis: 'Cerita rakyat tentang keutamaan berbakti kepada orang tua.', coverIcon: '⛵', url: 'https://buku.kemdikbud.go.id' }
+  { id: 1, title: 'Apa Itu', category: 'Kemdikdasmen', targetClass: 'Kelas 1-3', coverIcon: '🦊', url: 'https://buku.kemendikdasmen.go.id/katalog/apa-itu-edisi-buku-bahasa-isyarat' },
+  { id: 2, title: 'Ini atau Itu', category: 'Kelas 4-6', targetClass: 'Kelas 4-6', coverIcon: '🌳', url: 'https://buku.kemendikdasmen.go.id/katalog/ini-atau-itu-edisi-braille' }
 ])
 
 const filteredBooks = computed(() => {
