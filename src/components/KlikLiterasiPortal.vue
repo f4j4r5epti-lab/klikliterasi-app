@@ -225,6 +225,14 @@
 
       <!-- FEED JURNAL SISWA (Instagram Style Card) -->
       <div class="space-y-6">
+        <div v-if="isLoadingPosts" class="text-center py-8 text-slate-400 text-sm">
+          ⏳ Memuat jurnal siswa...
+        </div>
+
+        <div v-else-if="journalPosts.length === 0" class="text-center py-8 text-slate-400 text-sm bg-white rounded-3xl border border-slate-100">
+          Belum ada rangkuman yang dikirim. Jadilah yang pertama mengisi!
+        </div>
+
         <div v-for="post in journalPosts" :key="post.id" class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
           
           <!-- Header Card -->
@@ -235,7 +243,7 @@
               </div>
               <div>
                 <h4 class="font-extrabold text-slate-800 text-xs">{{ post.studentName }}</h4>
-                <p class="text-[10px] text-slate-400">Kelas {{ post.studentClass }} • {{ post.timeAgo }}</p>
+                <p class="text-[10px] text-slate-400">Kelas {{ post.studentClass }}</p>
               </div>
             </div>
             <span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2.5 py-1 rounded-md">
@@ -270,7 +278,7 @@
 
             <div class="flex items-center space-x-1.5 font-bold text-slate-400">
               <span class="text-base">💬</span>
-              <span>{{ post.comments.length }} Komentar</span>
+              <span>{{ post.comments ? post.comments.length : 0 }} Komentar</span>
             </div>
           </div>
 
@@ -289,7 +297,7 @@
               <input 
                 v-model="post.newCommentText" 
                 type="text" 
-                placeholder="Tulis komentar atau pujian guru/teman..." 
+                placeholder="Tulis komentar atau pujian..." 
                 class="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500"
               />
               <button 
@@ -323,16 +331,15 @@ import { ref, computed, watch, onMounted } from 'vue'
 const isMenuOpen = ref(false)
 
 // --- KONFIGURASI REST API CPANEL ---
-const API_URL = 'https://api-literasi.sdnpucung.my.id';
+const API_URL = 'https://api.klikliterasi.sdnpucung.my.id/api.php';
 
 // State untuk status pengiriman & loading
 const isSubmitting = ref(false)
 const isLoadingPosts = ref(false)
 
-// --- STATE PENJADWALAN & PILIHAN KELAS (DENGAN LOCALSTORAGE) ---
-const selectedClass = ref(1) // Default awal jika belum pernah memilih
+// --- STATE PENJADWALAN & PILIHAN KELAS ---
+const selectedClass = ref(1)
 
-// Mengambil data kelas & data rangkuman dari MySQL saat komponen dimuat
 onMounted(() => {
   const savedClass = localStorage.getItem('user_selected_class')
   if (savedClass) {
@@ -341,15 +348,12 @@ onMounted(() => {
   fetchJournalPosts()
 })
 
-// Menyimpan otomatis ke localStorage setiap kali siswa mengganti kelas
 watch(selectedClass, (newClass) => {
   localStorage.setItem('user_selected_class', newClass)
 })
 
-// Ambil Nama Hari Saat Ini (Sistem Lokal HP/Laptop Siswa)
 const currentDayName = new Date().toLocaleDateString('id-ID', { weekday: 'long' })
 
-// Pemetaan Jadwal Akses Interaksi
 const scheduleMatrix = {
   'Senin': 1,
   'Selasa': 2,
@@ -359,15 +363,13 @@ const scheduleMatrix = {
   'Sabtu': 6
 }
 
-// Teks Keterangan Jadwal Hari Ini
 const activeScheduleText = computed(() => {
   const allowedClass = scheduleMatrix[currentDayName]
   return allowedClass ? `Siswa Kelas ${allowedClass}` : 'Semua Kelas (Libur Hari Minggu)'
 })
 
-// Cek Apakah Kelas Siswa Berhak Berinteraksi Hari Ini
 const isBolehInteraksi = computed(() => {
-  if (currentDayName === 'Minggu') return true // Bebas akses di hari Minggu
+  if (currentDayName === 'Minggu') return true
   return scheduleMatrix[currentDayName] === Number(selectedClass.value)
 })
 
@@ -410,7 +412,7 @@ const filteredBooks = computed(() => {
   return books.value.filter(b => b.category === selectedCategory.value || b.targetClass === selectedCategory.value)
 })
 
-// --- JURNAL MEMBACA / LEMBAR KERJA ---
+// --- JURNAL MEMBACA SISWA ---
 const newEntry = ref({
   studentName: '',
   bookTitle: '',
@@ -419,34 +421,28 @@ const newEntry = ref({
 
 const journalPosts = ref([])
 
-// AMBIL DATA RANGKUMAN DARI BACKEND CPANEL (MYSQL)
+// 1. READ DATA (GET) DARI API.PHP
 const fetchJournalPosts = async () => {
   isLoadingPosts.value = true
   try {
-    const response = await fetch(`${API_URL}/get_journals.php`)
+    const response = await fetch(API_URL)
     if (response.ok) {
-      const data = await response.json()
-      journalPosts.value = data.map(item => ({
-        id: item.id,
-        studentName: item.student_name,
-        studentClass: item.student_class,
-        timeAgo: item.created_at || 'Baru saja',
-        bookTitle: item.book_title,
-        summary: item.summary,
-        likes: item.likes || 0,
-        isLiked: false,
-        newCommentText: '',
-        comments: item.comments || []
-      }))
+      const resData = await response.json()
+      if (resData.status === 'success') {
+        journalPosts.value = resData.data.map(item => ({
+          ...item,
+          newCommentText: ''
+        }))
+      }
     }
   } catch (error) {
-    console.error('Gagal mengambil data dari MySQL:', error)
+    console.error('Gagal mengambil data dari server:', error)
   } finally {
     isLoadingPosts.value = false
   }
 }
 
-// SUBMIT LEMBAR KERJA KE BACKEND CPANEL (MYSQL)
+// 2. SUBMIT POSTINGAN BARU (POST action: add_post)
 const submitWorksheet = async () => {
   if (!isBolehInteraksi.value) return
   if (!newEntry.value.studentName || !newEntry.value.summary) return
@@ -454,6 +450,7 @@ const submitWorksheet = async () => {
   isSubmitting.value = true
 
   const payload = {
+    action: 'add_post',
     studentName: newEntry.value.studentName,
     studentClass: selectedClass.value,
     bookTitle: newEntry.value.bookTitle || 'Buku Cerita',
@@ -461,7 +458,7 @@ const submitWorksheet = async () => {
   }
 
   try {
-    const response = await fetch(`${API_URL}/save_journal.php`, {
+    const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -471,42 +468,75 @@ const submitWorksheet = async () => {
 
     const result = await response.json()
 
-    if (response.ok && result.success) {
-      // Refresh feed agar data paling baru dari MySQL tampil
+    if (response.ok && result.status === 'success') {
       await fetchJournalPosts()
-
-      alert('✨ Rangkumanmu berhasil terkirim dan tersimpan aman di server!')
+      alert('✨ Rangkumanmu berhasil tersimpan!')
       newEntry.value.studentName = ''
       newEntry.value.bookTitle = ''
       newEntry.value.summary = ''
     } else {
-      throw new Error(result.message || 'Gagal menyimpan ke database')
+      alert(`⚠️ ${result.message || 'Gagal menyimpan rangkuman.'}`)
     }
-
   } catch (error) {
-    console.error('Error:', error)
-    alert('⚠️ Gagal mengirim rangkuman. Periksa koneksi internetmu ya!')
+    console.error('Error submit:', error)
+    alert('⚠️ Gagal terhubung ke server. Periksa jaringan Anda!')
   } finally {
     isSubmitting.value = false
   }
 }
 
-const toggleLike = (post) => {
+// 3. TOGGLE LIKE (POST action: toggle_like)
+const toggleLike = async (post) => {
   if (!isBolehInteraksi.value) return
+
   post.isLiked = !post.isLiked
   post.likes += post.isLiked ? 1 : -1
+
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'toggle_like',
+        postId: post.id,
+        studentClass: selectedClass.value
+      })
+    })
+  } catch (err) {
+    console.error('Error liking post:', err)
+  }
 }
 
-const addComment = (post) => {
+// 4. ADD COMMENT (POST action: add_comment)
+const addComment = async (post) => {
   if (!isBolehInteraksi.value) return
-  if (!post.newCommentText.trim()) return
+  if (!post.newCommentText || !post.newCommentText.trim()) return
+
+  const commentText = post.newCommentText.trim()
+  const authorName = `Siswa Kelas ${selectedClass.value}`
 
   post.comments.push({
-    author: 'Siswa / Guru',
-    text: post.newCommentText,
+    author: authorName,
+    text: commentText,
     isTeacher: false
   })
+
   post.newCommentText = ''
+
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'add_comment',
+        postId: post.id,
+        author: authorName,
+        text: commentText
+      })
+    })
+  } catch (err) {
+    console.error('Error comment:', err)
+  }
 }
 
 const getInitials = (name) => {
