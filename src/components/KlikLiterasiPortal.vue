@@ -298,6 +298,7 @@ const getInitials = (name) => {
 <template>
   <div class="literacy-portal font-sans bg-amber-50/20 min-h-screen text-slate-800">
     
+    <!-- DASHBOARD LOGIN -->
     <div 
       v-if="!currentStudent" 
       class="min-h-screen w-full relative flex flex-col items-center justify-center bg-cover bg-center bg-no-repeat overflow-x-hidden p-4 sm:p-6"
@@ -395,6 +396,7 @@ const getInitials = (name) => {
       </div>
     </div>
 
+    <!-- HALAMAN UTAMA / DASHBOARD UTAMA -->
     <div v-else class="pb-12">
       <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 px-6 py-4 shadow-sm">
         <div class="flex items-center justify-between">
@@ -445,6 +447,7 @@ const getInitials = (name) => {
         </div>
       </header>
 
+      <!-- BANNER JADWAL AKSES -->
       <section id="jadwal" class="max-w-6xl mx-auto px-6 mt-6">
         <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
