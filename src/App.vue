@@ -17,38 +17,74 @@
         <div class="bg-white p-8 rounded-3xl shadow-2xl border border-slate-100">
           <div class="text-center mb-6">
             <h2 class="text-xl font-extrabold text-slate-800">Selamat Datang! 👋</h2>
-            <p class="text-xs text-slate-500 mt-1">Masukkan Nama Lengkap dan Kelas Anda untuk masuk ke portal literasi.</p>
+            <p class="text-xs text-slate-500 mt-1">Pilih kelas, nama lengkap, dan masukkan PIN/Password Anda.</p>
           </div>
 
           <form @submit.prevent="handleLogin" class="space-y-4">
+            <!-- 1. Form Input Pilihan Kelas / Peran -->
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap Siswa</label>
-              <input 
-                v-model="loginForm.full_name" 
-                type="text" 
-                placeholder="Contoh: Budi Santoso" 
-                required
-                class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-600 focus:bg-white transition" 
-              />
-            </div>
-
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Pilih Kelas</label>
-              <select 
-                v-model="loginForm.classLevel" 
+              <label class="block text-xs font-bold text-slate-700 mb-1">
+                Pilih Kelas / Peran
+              </label>
+              <select
+                v-model="loginForm.classLevel"
                 required
                 class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-600 focus:bg-white transition"
               >
-                <option value="" disabled selected>-- Pilih Kelas Anda --</option>
-                <option value="Kelas 1">Kelas 1</option>
-                <option value="Kelas 2">Kelas 2</option>
-                <option value="Kelas 3">Kelas 3</option>
-                <option value="Kelas 4">Kelas 4</option>
-                <option value="Kelas 5">Kelas 5</option>
-                <option value="Kelas 6">Kelas 6</option>
+                <option :value="null" disabled>-- Pilih Kelas / Peran Anda --</option>
+                <!-- OPSI GURU / ADMIN DENGAN VALUE 0 -->
+                <option :value="0">Guru / Admin</option>
+                <!-- OPSI KELAS SISWA 1-6 -->
+                <option :value="1">Kelas 1</option>
+                <option :value="2">Kelas 2</option>
+                <option :value="3">Kelas 3</option>
+                <option :value="4">Kelas 4</option>
+                <option :value="5">Kelas 5</option>
+                <option :value="6">Kelas 6</option>
               </select>
             </div>
 
+            <!-- 2. Auto-complete Nama (Menggunakan filteredUserOptions) -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">
+                Nama Lengkap
+              </label>
+              <input
+                v-model="loginForm.full_name"
+                type="text"
+                list="user-suggestions"
+                placeholder="Masukkan atau pilih nama..."
+                required
+                class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-600 focus:bg-white transition"
+              />
+
+              <!-- Datalist rekomendasi nama sesuai kelas/peran yang dipilih -->
+              <datalist id="user-suggestions">
+                <option 
+                  v-for="user in filteredUserOptions" 
+                  :key="user.id" 
+                  :value="user.full_name"
+                >
+                  {{ formatClassDisplay(user.class_level) }}
+                </option>
+              </datalist>
+            </div>
+
+            <!-- 3. PIN / Password (Dinamis sesuai Peran) -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">
+                {{ loginForm.classLevel === 0 ? 'Password Guru / Admin' : 'PIN Siswa (4-6 Digit)' }}
+              </label>
+              <input
+                v-model="loginForm.password"
+                :type="loginForm.classLevel === 0 ? 'password' : 'password'"
+                :placeholder="loginForm.classLevel === 0 ? 'Masukkan password admin...' : 'Masukkan PIN angka...'"
+                required
+                class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-600 focus:bg-white transition"
+              />
+            </div>
+
+            <!-- Error Message -->
             <div v-if="loginError" class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-600 font-medium">
               ⚠️ {{ loginError }}
             </div>
@@ -58,7 +94,7 @@
               :disabled="isLoggingIn"
               class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/30 transition duration-200 cursor-pointer"
             >
-              <span v-if="isLoggingIn">Memeriksa Data Siswa...</span>
+              <span v-if="isLoggingIn">Memeriksa Data...</span>
               <span v-else>Masuk ke Portal Literasi 🚀</span>
             </button>
           </form>
@@ -190,7 +226,7 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h2 class="text-2xl font-black text-slate-800">Daftar Buku Bacaan</h2>
-            <p class="text-xs text-slate-500">Semua siswa terdaftar dapat membaca buku di bawah ini kapan saja</p>
+            <p class="text-xs text-slate-500">Semua pengguna terdaftar dapat membaca buku di bawah ini kapan saja</p>
           </div>
 
           <div class="flex flex-wrap gap-2">
@@ -251,7 +287,7 @@
               <input 
                 v-model="newEntry.studentName" 
                 type="text" 
-                placeholder="Nama Lengkap Siswa" 
+                placeholder="Nama Lengkap" 
                 required
                 readonly
                 class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 cursor-not-allowed focus:outline-none"
@@ -387,34 +423,72 @@ import { ref, computed, onMounted } from 'vue'
 
 const isMenuOpen = ref(false)
 
-// URL API diperbarui ke subdomain api.klikliterasi
+// URL API ke subdomain api.klikliterasi
 const API_URL = 'https://api-literasi.sdnpucung.my.id/api.php'
 
 const isSubmitting = ref(false)
 const isLoadingPosts = ref(false)
+const isLoadingStudents = ref(false)
 
-// --- SISTEM LOGIN SISWA (NAMA & KELAS) ---
+// --- STATE LOGIN & USER ---
 const isLoggingIn = ref(false)
 const loginError = ref('')
 const currentStudent = ref(null)
 
-const loginForm = ref({ full_name: '', classLevel: '' })
-// ... Sisa kode ke bawah tetap sama
-// Helper format string kelas untuk konsistensi tampilan
+// Form Login dengan input Password/PIN
+const loginForm = ref({ 
+  full_name: '', 
+  classLevel: null,
+  password: '' 
+})
+const studentList = ref([]) // Master data siswa & guru dari database
+
+// --- COMPUTED OPTIONS NAMA UNTUK FORM LOGIN ---
+const filteredUserOptions = computed(() => {
+  if (loginForm.value.classLevel === '' || loginForm.value.classLevel === null) {
+    return studentList.value
+  }
+  return studentList.value.filter(
+    user => Number(user.class_level) === Number(loginForm.value.classLevel)
+  )
+})
+
+// --- HELPER FORMAT & EKSTRAKSI ---
 const formatClassDisplay = (val) => {
-  if (!val) return ''
+  if (val === null || val === undefined || val === '') return ''
+  const num = Number(val)
+  if (num === 0) return 'Guru / Admin'
   const str = String(val)
   return str.startsWith('Kelas') ? str : `Kelas ${str}`
 }
 
-// Helper ekstraksi angka kelas
 const getNumericClassLevel = (val) => {
-  if (!val) return 0
+  if (val === null || val === undefined || val === '') return 0
   const match = String(val).match(/\d+/)
   return match ? parseInt(match[0], 10) : 0
 }
 
+// --- FETCH DATA MASTER & SESSION ---
+const fetchStudentList = async () => {
+  isLoadingStudents.value = true
+  try {
+    const response = await fetch(`${API_URL}?action=get_students`)
+    const result = await response.json()
+    if (result.status === 'success') {
+      studentList.value = result.data
+    }
+  } catch (error) {
+    console.error('Error fetching student list:', error)
+  } finally {
+    isLoadingStudents.value = false
+  }
+}
+
 onMounted(() => {
+  // 1. Ambil data master siswa & guru dari database untuk autocomplete
+  fetchStudentList()
+
+  // 2. Cek sesi login tersimpan
   const savedUser = localStorage.getItem('logged_student')
   if (savedUser) {
     currentStudent.value = JSON.parse(savedUser)
@@ -423,6 +497,7 @@ onMounted(() => {
   }
 })
 
+// --- AKSI LOGIN & LOGOUT ---
 const handleLogin = async () => {
   isLoggingIn.value = true
   loginError.value = ''
@@ -434,7 +509,8 @@ const handleLogin = async () => {
       body: JSON.stringify({
         action: 'login',
         full_name: loginForm.value.full_name.trim(),
-        class_level: loginForm.value.classLevel
+        class_level: loginForm.value.classLevel,
+        password: loginForm.value.password // Dikirim ke PHP untuk verifikasi
       })
     })
 
@@ -443,12 +519,12 @@ const handleLogin = async () => {
       currentStudent.value = result.student
       localStorage.setItem('logged_student', JSON.stringify(result.student))
       newEntry.value.studentName = result.student.full_name
-      loginForm.value = { full_name: '', classLevel: '' }
+      loginForm.value = { full_name: '', classLevel: null, password: '' }
       
       // Ambil data jurnal setelah berhasil masuk
       fetchJournalPosts()
     } else {
-      loginError.value = result.message || 'Nama siswa atau Kelas tidak cocok dengan database.'
+      loginError.value = result.message || 'Nama, Kelas, atau PIN/Password tidak cocok dengan database.'
     }
   } catch (error) {
     loginError.value = 'Terjadi kesalahan koneksi ke server.'
@@ -484,8 +560,16 @@ const activeScheduleText = computed(() => {
 
 const isBolehInteraksi = computed(() => {
   if (!currentStudent.value) return false
-  if (currentDayName === 'Minggu') return true // Bebas di hari Minggu
+  
   const userClassNum = getNumericClassLevel(currentStudent.value.class_level)
+  
+  // 1. GURU / ADMIN (Level 0) BISA INTERAKSI SETIAP HARI
+  if (userClassNum === 0) return true 
+  
+  // 2. HARI MINGGU SEMUA KELAS BEBAS INTERAKSI
+  if (currentDayName === 'Minggu') return true 
+  
+  // 3. SISWA SESUAI JADWAL HARI BERJALAN
   return scheduleMatrix[currentDayName] === userClassNum
 })
 
@@ -600,7 +684,7 @@ const addComment = async (post) => {
   post.comments.push({
     author: authorName,
     text: commentText,
-    isTeacher: false
+    isTeacher: Number(currentStudent.value.class_level) === 0
   })
   
   post.newCommentText = ''
