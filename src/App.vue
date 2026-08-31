@@ -1,9 +1,6 @@
 <template>
   <div class="literacy-portal font-sans bg-amber-50/20 min-h-screen text-slate-800">
     
-    <!-- ========================================== -->
-    <!-- HALAMAN 1: HALAMAN LOGIN AWAL (BELUM LOGIN) -->
-    <!-- ========================================== -->
     <div v-if="!currentStudent" class="min-h-screen flex flex-col justify-between p-6 bg-gradient-to-br from-indigo-50 via-amber-50/30 to-purple-50">
       <header class="max-w-md mx-auto w-full text-center pt-8">
         <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-indigo-200 mx-auto mb-3">
@@ -21,7 +18,6 @@
           </div>
 
           <form @submit.prevent="handleLogin" class="space-y-4">
-            <!-- 1. Form Input Pilihan Kelas / Peran -->
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">
                 Pilih Kelas / Peran
@@ -32,9 +28,7 @@
                 class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-600 focus:bg-white transition"
               >
                 <option :value="null" disabled>-- Pilih Kelas / Peran Anda --</option>
-                <!-- OPSI GURU / ADMIN DENGAN VALUE 0 -->
                 <option :value="0">Guru / Admin</option>
-                <!-- OPSI KELAS SISWA 1-6 -->
                 <option :value="1">Kelas 1</option>
                 <option :value="2">Kelas 2</option>
                 <option :value="3">Kelas 3</option>
@@ -44,7 +38,6 @@
               </select>
             </div>
 
-            <!-- 2. Auto-complete Nama (Menggunakan filteredUserOptions) -->
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">
                 Nama Lengkap
@@ -58,7 +51,6 @@
                 class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-600 focus:bg-white transition"
               />
 
-              <!-- Datalist rekomendasi nama sesuai kelas/peran yang dipilih -->
               <datalist id="user-suggestions">
                 <option 
                   v-for="user in filteredUserOptions" 
@@ -70,21 +62,19 @@
               </datalist>
             </div>
 
-            <!-- 3. PIN / Password (Dinamis sesuai Peran) -->
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">
                 {{ loginForm.classLevel === 0 ? 'Password Guru / Admin' : 'PIN Siswa (4-6 Digit)' }}
               </label>
               <input
                 v-model="loginForm.password"
-                :type="loginForm.classLevel === 0 ? 'password' : 'password'"
+                type="password"
                 :placeholder="loginForm.classLevel === 0 ? 'Masukkan password admin...' : 'Masukkan PIN angka...'"
                 required
                 class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-600 focus:bg-white transition"
               />
             </div>
 
-            <!-- Error Message -->
             <div v-if="loginError" class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-600 font-medium">
               ⚠️ {{ loginError }}
             </div>
@@ -107,13 +97,9 @@
     </div>
 
 
-    <!-- ========================================== -->
-    <!-- HALAMAN 2: PORTAL LITERASI (SUDAH LOGIN)   -->
-    <!-- ========================================== -->
     <div v-else class="pb-12">
-      <!-- NAVBAR -->
       <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 px-6 py-4 shadow-sm">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between max-w-6xl mx-auto">
           <div class="flex items-center space-x-3">
             <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md shadow-indigo-200">
               SD
@@ -124,14 +110,13 @@
             </div>
           </div>
 
-          <nav class="hidden md:flex items-center space-x-8 font-medium text-slate-600">
+          <nav class="hidden md:flex items-center space-x-8 font-medium text-xs text-slate-600">
             <a href="#beranda" class="hover:text-indigo-600 transition">Beranda</a>
+            <a href="#jadwal" class="hover:text-indigo-600 transition">Jadwal Akses</a>
             <a href="#katalog" class="hover:text-indigo-600 transition">Katalog Buku</a>
             <a href="#jurnal" class="hover:text-indigo-600 transition">Jurnal Membaca</a>
-            <a href="#jadwal" class="hover:text-indigo-600 transition">Jadwal Akses</a>
           </nav>
 
-          <!-- AKUN & LOGOUT -->
           <div class="flex items-center gap-3">
             <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
               <span class="text-xs font-bold text-emerald-800">
@@ -148,16 +133,59 @@
           </div>
         </div>
 
-        <div v-if="isMenuOpen" class="md:hidden mt-4 pt-3 border-t border-slate-100 flex flex-col space-y-3 font-medium text-sm text-slate-600">
+        <div v-if="isMenuOpen" class="md:hidden mt-4 pt-3 border-t border-slate-100 flex flex-col space-y-3 font-medium text-xs text-slate-600">
           <a href="#beranda" @click="isMenuOpen = false" class="hover:text-indigo-600 transition py-1">Beranda</a>
+          <a href="#jadwal" @click="isMenuOpen = false" class="hover:text-indigo-600 transition py-1">Jadwal Akses</a>
           <a href="#katalog" @click="isMenuOpen = false" class="hover:text-indigo-600 transition py-1">Katalog Buku</a>
           <a href="#jurnal" @click="isMenuOpen = false" class="hover:text-indigo-600 transition py-1">Jurnal Membaca</a>
-          <a href="#jadwal" @click="isMenuOpen = false" class="hover:text-indigo-600 transition py-1">Jadwal Akses</a>
         </div>
       </header>
 
-      <!-- BANNER HARI & PENJADWALAN -->
-      <section id="jadwal" class="max-w-6xl mx-auto px-6 mt-6">
+      <section id="beranda" class="max-w-6xl mx-auto px-6 pt-6 pb-2">
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+          
+          <div class="space-y-3 text-center md:text-left">
+            <span class="bg-white/20 text-indigo-100 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider inline-block">
+              📚 Gerakan Literasi Sekolah
+            </span>
+            <h2 class="text-2xl md:text-3xl font-black text-white leading-tight">
+              Halo, {{ currentStudent.full_name }}! 👋
+            </h2>
+            <p class="text-indigo-100 text-xs md:text-sm max-w-xl leading-relaxed">
+              Selamat datang di Portal Klik Literasi SD Negeri Pucung. Mari tingkatkan minat baca, temukan buku menarik, dan bagikan ringkasan ceritamu setiap hari!
+            </p>
+
+            <div class="pt-2 flex flex-wrap gap-3 justify-center md:justify-start">
+              <a 
+                href="#katalog" 
+                class="bg-amber-400 hover:bg-amber-500 text-indigo-950 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-amber-500/20 transition cursor-pointer"
+              >
+                Mulai Membaca 📖
+              </a>
+              <a 
+                href="#jurnal" 
+                class="bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold px-5 py-3 rounded-xl backdrop-blur-md transition cursor-pointer"
+              >
+                Isi Jurnal ✍️
+              </a>
+            </div>
+          </div>
+
+          <div class="flex gap-3 w-full md:w-auto justify-center">
+            <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center flex-1 md:flex-none md:min-w-[120px]">
+              <span class="text-2xl md:text-3xl font-black text-amber-300 block">{{ books.length }}</span>
+              <span class="text-[10px] font-bold text-indigo-100 uppercase tracking-wider mt-1 block">Katalog Buku</span>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center flex-1 md:flex-none md:min-w-[120px]">
+              <span class="text-2xl md:text-3xl font-black text-amber-300 block">{{ journalPosts.length }}</span>
+              <span class="text-[10px] font-bold text-indigo-100 uppercase tracking-wider mt-1 block">Jurnal Terisi</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <section id="jadwal" class="max-w-6xl mx-auto px-6 mt-4">
         <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
             <span class="bg-white/20 text-xs px-3 py-1 rounded-full font-semibold uppercase tracking-wider">
@@ -185,39 +213,6 @@
         </div>
       </section>
 
-      <!-- HERO SECTION -->
-      <section id="beranda" class="max-w-6xl mx-auto px-6 py-12 grid md:grid-cols-2 gap-8 items-center">
-        <div>
-          <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-            #1 Portal Literasi SDN Pucung
-          </span>
-          <h1 class="text-4xl md:text-5xl font-black text-slate-800 mt-4 leading-tight">
-            Jelajahi Dunia Lewat <span class="text-indigo-600">Buku Digital</span>
-          </h1>
-          <p class="text-slate-600 mt-4 text-base leading-relaxed">
-            Baca buku cerita seru dari Kemdikdasmen, tulis rangkumanmu di Lembar Kerja, dan bagikan kesan membacamu bersama teman-teman!
-          </p>
-          <a href="#katalog" class="inline-block mt-6 bg-amber-500 hover:bg-amber-600 text-white font-bold px-8 py-3.5 rounded-2xl shadow-lg shadow-amber-500/30 transition-all transform hover:-translate-y-0.5">
-            Mulai Membaca Sekarang
-          </a>
-        </div>
-
-        <div class="relative flex justify-center">
-          <div class="w-full max-w-sm bg-white p-5 rounded-3xl shadow-2xl border border-slate-100 relative z-10">
-            <div class="bg-gradient-to-tr from-purple-500 to-indigo-500 h-48 rounded-2xl flex items-center justify-center text-white text-5xl font-extrabold shadow-inner">
-              📚
-            </div>
-            <div class="mt-4">
-              <span class="text-xs font-bold text-amber-500 bg-amber-50 px-2.5 py-0.5 rounded-md">Rekomendasi Minggu Ini</span>
-              <h3 class="font-extrabold text-slate-800 text-lg mt-1">Petualangan Si Kancil Cerdik</h3>
-              <p class="text-xs text-slate-500 mt-1">Sumber: Kemdikdasmen • Untuk Kelas 1-3</p>
-            </div>
-          </div>
-          <div class="absolute inset-0 bg-indigo-400/20 blur-3xl rounded-full transform scale-90"></div>
-        </div>
-      </section>
-
-      <!-- KATALOG BUKU BACAAN -->
       <section id="katalog" class="max-w-6xl mx-auto px-6 py-8">
         <div v-if="!isBolehInteraksi" class="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6 rounded-r-2xl text-amber-800 text-xs md:text-sm">
           🔒 <strong>Akses Interaksi Terkunci:</strong> Anda berada di {{ formatClassDisplay(currentStudent.class_level) }}. Hari ini jadwal interaksi khusus <strong>{{ activeScheduleText }}</strong>. Anda tetap bebas membaca buku di bawah ini.
@@ -269,14 +264,12 @@
         </div>
       </section>
 
-      <!-- LEMBAR KERJA & JURNAL INTERAKTIF -->
-      <section id="jurnal" class="max-w-4xl mx-auto px-6 py-12">
+      <section id="jurnal" class="max-w-4xl mx-auto px-6 py-8">
         <div class="text-center mb-8">
           <h2 class="text-3xl font-black text-slate-800">Jurnal Membaca Siswa</h2>
           <p class="text-sm text-slate-500 mt-1">Tulis rangkuman ceritamu dan berikan apresiasi kepada teman-teman!</p>
         </div>
 
-        <!-- FORM INPUT MERANGKUM -->
         <div class="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 mb-10">
           <h3 class="font-extrabold text-slate-800 text-base mb-4 flex items-center space-x-2">
             <span>✍️</span> <span>Buat Lembar Kerja Baru</span>
@@ -329,7 +322,6 @@
           </div>
         </div>
 
-        <!-- FEED JURNAL PERMANEN -->
         <div class="space-y-6">
           <div v-if="isLoadingPosts" class="text-center py-8 text-slate-400 text-xs">
             ⏳ Memuat rangkuman dari database...
@@ -410,7 +402,6 @@
         </div>
       </section>
 
-      <!-- FOOTER -->
       <footer class="text-center text-xs text-slate-400 mt-12">
         <p>© {{ new Date().getFullYear() }} SD Negeri Pucung. Domain: <span class="font-semibold text-slate-600">sdnpucung.my.id</span></p>
       </footer>
@@ -575,10 +566,10 @@ const isBolehInteraksi = computed(() => {
 
 // --- DATA KATALOG BUKU & JURNAL ---
 const selectedCategory = ref('Semua')
-const categories = ['Semua', 'Kemdikdasmen', 'Dongeng Nusantara', 'Kelas 1-3', 'Kelas 4-6']
+const categories = ['Semua', 'Kelas 1-3', 'Kelas 4-6']
 
 const books = ref([
-  { id: 1, title: 'Apa Itu', category: 'Kemdikdasmen', targetClass: 'Kelas 1-3', coverIcon: '🦊', url: 'https://buku.kemendikdasmen.go.id/katalog/apa-itu-edisi-buku-bahasa-isyarat', synopsis: 'Buku cerita bergambar interaktif dengan fitur bahasa isyarat.' },
+  { id: 1, title: 'Apa Itu', category: 'Kelas 1-3', targetClass: 'Kelas 1-3', coverIcon: '🦊', url: 'https://buku.kemendikdasmen.go.id/katalog/apa-itu-edisi-buku-bahasa-isyarat', synopsis: 'Buku cerita bergambar interaktif dengan fitur bahasa isyarat.' },
   { id: 2, title: 'Ini atau Itu', category: 'Kelas 4-6', targetClass: 'Kelas 4-6', coverIcon: '🌳', url: 'https://buku.kemendikdasmen.go.id/katalog/ini-atau-itu-edisi-braille', synopsis: 'Membantu memahami konsep pilihan dan konsekuensi melalui cerita interaktif.' }
 ])
 
